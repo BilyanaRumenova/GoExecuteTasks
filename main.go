@@ -30,6 +30,7 @@ func CheckErr(err error) {
 }
 
 func ProcessTasks(rw http.ResponseWriter, req *http.Request) {
+	// Check if the request method is right one (POST)
 	if req.Method != http.MethodPost {
 		rw.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -37,11 +38,12 @@ func ProcessTasks(rw http.ResponseWriter, req *http.Request) {
 	recBody, err := io.ReadAll(req.Body)
 	CheckErr(err)
 
-	// Parse the request JSON
 	var taskList []Task
+	// Parse the request body
 	err = json.Unmarshal(recBody, &taskList)
 	CheckErr(err)
 
+	// Sort the tasks into the right order of execution
 	sortedTasks, err := SortTasks(taskList)
 	CheckErr(err)
 
@@ -62,9 +64,11 @@ func SortTasks(tasks []Task) ([]Task, error) {
 	for _, task := range tasks {
 		tasksMap[task.Name] = task
 	}
+	// Variable to store the right order of task execution
 	var sortedTasks []Task
 	executed := make(map[string]bool)
 
+	// Start executing the tasks
 	for _, task := range tasks {
 		err := ExecuteTasks(task, tasksMap, executed, &sortedTasks)
 		CheckErr(err)
@@ -73,11 +77,13 @@ func SortTasks(tasks []Task) ([]Task, error) {
 }
 
 func ExecuteTasks(task Task, taskMap map[string]Task, executed map[string]bool, sortedTasks *[]Task) error {
+	// Check if the current task has already been executed
 	if executed[task.Name] {
 		return nil
 	}
 
 	for _, requiredTask := range task.Requires {
+		// Check if the required task exists at all
 		taskName, success := taskMap[requiredTask]
 		if success != true {
 			return fmt.Errorf("required task does not exist: %s", requiredTask)
@@ -85,13 +91,14 @@ func ExecuteTasks(task Task, taskMap map[string]Task, executed map[string]bool, 
 		err := ExecuteTasks(taskName, taskMap, executed, sortedTasks)
 		CheckErr(err)
 	}
-
+	// Set the current task as executed
 	executed[task.Name] = true
 	*sortedTasks = append(*sortedTasks, task)
 	return nil
 }
 
 func GenerateBashScript(tasks []Task) string {
+	// Start building the final bash script representation
 	var sb strings.Builder
 	sb.WriteString("#!/usr/bin/env bash\n")
 
@@ -99,5 +106,6 @@ func GenerateBashScript(tasks []Task) string {
 		sb.WriteString(task.Command)
 		sb.WriteString("\n")
 	}
+	// Returns the accumulated string
 	return sb.String()
 }
