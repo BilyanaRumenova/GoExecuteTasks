@@ -6,4 +6,4 @@ depend on other tasks and require that those are executed beforehand. The servic
 of sorting the tasks to create a proper execution order.
 
 Additionally, the service is able to return a bash script representation directly thus allowing us to run the commands directly from shell:
-$ curl -d "@mytasks.json" -X POST http://localhost:4000/process_tasks | bash
+$ curl -d @mytasks.json -X POST http://localhost:4000/process_tasks | bash
